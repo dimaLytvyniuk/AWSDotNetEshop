@@ -1,0 +1,17 @@
+-- Identity.API
+add-migration InitialMigration -Context ApplicationDbContext -o Data/Migrations
+update-database InitialMigration -Context ApplicationDbContext
+
+-- Catalog.API
+add-migration InitialMigration -Context CatalogContext -o Infrastructure/CatalogMigrations
+update-database InitialMigration -Context CatalogContext
+
+add-migration IntegrationEventInitial -Context IntegrationEventLogContext -o Infrastructure/IntegrationEventMigrations
+update-database IntegrationEventInitial -Context IntegrationEventLogContext
+
+-- Ordering.API
+add-migration InitialMigration -Context OrderingContext -o Infrastructure/Migrations
+update-database InitialMigration -Context OrderingContext
+
+add-migration IntegrationEventInitial -Context IntegrationEventLogContext -o Infrastructure/IntegrationEventMigrations
+update-database IntegrationEventInitial -Context IntegrationEventLogContext

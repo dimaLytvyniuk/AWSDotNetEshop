@@ -1,0 +1,85 @@
+name: Deploy AWS Stack
+
+env:
+  ECR_TEMPLATE_FILE               : "ecr-template.yaml"
+  ECR_STACK_NAME                  : "awsdotneteshop-ecr"
+  ECS_TEMPLATE_FILE               : "ecs-template.yaml"
+  ECS_STACK_NAME                  : "awsdotneteshop-ecs"
+  AWS_REGION_NAME                 : "us-east-1" 
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "src/**"
+
+jobs:
+
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{env.AWS_REGION_NAME}} 
+    
+    - name: Install AWS CLI
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y awscli
+
+    - name: Deploy ECR stack
+      run: |
+        STACK_NAME=${{env.ECR_STACK_NAME}}
+        TEMPLATE_FILE=${{env.ECR_TEMPLATE_FILE}}
+
+        aws cloudformation deploy \
+          --stack-name $STACK_NAME \
+          --template-file $TEMPLATE_FILE \
+          --capabilities CAPABILITY_NAMED_IAM # Modify the `--capabilities` flag as needed
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+      with:
+        skip-logout: false
+        registry-type: private
+        region: ${{ env.AWS_REGION_NAME }}
+    
+    - name: Build web-aggregator Docker image
+      run: docker-compose -f src/docker-compose.yml build webshoppingagg
+
+    - name: Tag and push web-aggregator Docker image
+      run: |
+        IMAGE_ID=$(docker images --quiet eshop/webshoppingagg:linux-latest)
+        docker tag ${IMAGE_ID} ${{ steps.login-ecr.outputs.registry }}/web-aggregator:latest
+        docker push ${{ steps.login-ecr.outputs.registry }}/web-aggregator:latest
+
+    - name: Build catalog-api Docker image
+      run: docker-compose -f src/docker-compose.yml build catalog-api
+
+    - name: Tag and push catalog-api Docker image
+      run: |
+        IMAGE_ID=$(docker images --quiet eshop/catalog.api:linux-latest)
+        docker tag ${IMAGE_ID} ${{ steps.login-ecr.outputs.registry }}/catalog-api:latest
+        docker push ${{ steps.login-ecr.outputs.registry }}/catalog-api:latest
+    
+    - name: Deploy ECS stack
+      run: |
+        STACK_NAME=${{env.ECS_STACK_NAME}}
+        TEMPLATE_FILE=${{env.ECS_TEMPLATE_FILE}}
+
+        aws cloudformation deploy \
+          --stack-name $STACK_NAME \
+          --template-file $TEMPLATE_FILE \
+          --capabilities CAPABILITY_NAMED_IAM
