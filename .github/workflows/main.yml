@@ -13,7 +13,7 @@ on:
       - master
     paths:
       - "src/**"
-  workflow_dispatch
+  workflow_dispatch:
 
 jobs:
 
