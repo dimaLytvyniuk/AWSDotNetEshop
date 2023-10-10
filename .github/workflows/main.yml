@@ -2,9 +2,9 @@ name: Deploy AWS Stack
 
 env:
   ECR_TEMPLATE_FILE               : "ecr-template.yaml"
-  ECR_STACK_NAME                  : "awsdotneteshop-ecr"
+  ECR_STACK_NAME                  : "awsdotneteshop-9701-ecr"
   ECS_TEMPLATE_FILE               : "ecs-template.yaml"
-  ECS_STACK_NAME                  : "awsdotneteshop-ecs"
+  ECS_STACK_NAME                  : "awsdotneteshop-9701-ecs"
   AWS_REGION_NAME                 : "us-east-1" 
 
 on:
