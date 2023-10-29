@@ -47,11 +47,7 @@ public static class Extensions
 
         services.AddDbContext<IntegrationEventLogContext>(options =>
         {
-#if DEBUG
             options.UseMySQL(configuration.GetRequiredConnectionString("CatalogDB"), ConfigureMySqlOptions);
-#else
-            options.UseInMemoryDatabase("Mock_DB");
-#endif
         });
 
         return services;

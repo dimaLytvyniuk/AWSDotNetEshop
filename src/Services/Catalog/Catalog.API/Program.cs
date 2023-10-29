@@ -45,7 +45,6 @@ using (var scope = app.Services.CreateScope())
 
     var dbStatus = healthReport.Entries.First(e => e.Key == "CatalogDB-check");
 
-#if DEBUG
     if (dbStatus.Value.Status == HealthStatus.Healthy)
     {
         await context.Database.MigrateAsync();
@@ -54,7 +53,6 @@ using (var scope = app.Services.CreateScope())
         var integEventContext = scope.ServiceProvider.GetRequiredService<IntegrationEventLogContext>();
         await integEventContext.Database.MigrateAsync();
     }
-#endif
 }
 
 await app.RunAsync();
