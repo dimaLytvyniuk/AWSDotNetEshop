@@ -75,6 +75,15 @@ jobs:
         docker tag ${IMAGE_ID} ${{ steps.login-ecr.outputs.registry }}/catalog-api:latest
         docker push ${{ steps.login-ecr.outputs.registry }}/catalog-api:latest
     
+    - name: Build basket-api Docker image
+      run: docker-compose -f src/docker-compose.yml build basket-api
+
+    - name: Tag and push basket-api Docker image
+      run: |
+        IMAGE_ID=$(docker images --quiet eshop/basket.api:linux-latest)
+        docker tag ${IMAGE_ID} ${{ steps.login-ecr.outputs.registry }}/basket-api:latest
+        docker push ${{ steps.login-ecr.outputs.registry }}/basket-api:latest
+
     - name: Deploy ECS stack
       run: |
         STACK_NAME=${{env.ECS_STACK_NAME}}
