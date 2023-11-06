@@ -50,7 +50,7 @@ Resources:
           }
         RegistryId: !Ref "AWS::AccountId"
   
-  ECRCatalogApiRepository:
+  ECRBasketApiRepository:
     Type: 'AWS::ECR::Repository'
     Properties:
       RepositoryName: basket-api
