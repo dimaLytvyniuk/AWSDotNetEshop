@@ -36,19 +36,15 @@ public static class Extensions
 
         return services.AddSingleton<IAmazonDynamoDB>(sp =>
         {
-            var clientConfig = new AmazonDynamoDBConfig()
+            if (runLocalDynamoDb)
             {
-                UseHttp = true,
-                LogMetrics = true,
-                LogResponse = true,
-                DisableLogging = false,
-                ServiceURL = dynamoDbConfig.GetValue<string>("LocalServiceUrl")
-            };
+                var accessKey = configuration.GetValue<string>("AWS_ACCESS_KEY_ID");
+                var awsSecret = configuration.GetValue<string>("AWS_SECRET_ACCESS_KEY");
 
-            var accessKey = configuration.GetValue<string>("AWS_ACCESS_KEY_ID");
-            var awsSecret = configuration.GetValue<string>("AWS_SECRET_ACCESS_KEY");
+                return new AmazonDynamoDBClient(accessKey, awsSecret);
+            }
 
-            return new AmazonDynamoDBClient(accessKey, awsSecret, clientConfig);
+            return new AmazonDynamoDBClient();
         });
     }
 

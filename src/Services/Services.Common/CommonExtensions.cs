@@ -36,7 +36,7 @@ public static class CommonExtensions
         builder.Services.AddDefaultHealthChecks(builder.Configuration);
 
         // Add the event bus
-        builder.Services.AddEventBus(builder.Configuration);
+        // builder.Services.AddEventBus(builder.Configuration);
 
         builder.Services.AddDefaultAuthentication(builder.Configuration);
 

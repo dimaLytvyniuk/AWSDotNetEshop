@@ -22,9 +22,9 @@ app.UseServiceDefaults();
 app.MapGrpcService<BasketService>();
 app.MapControllers();
 
-var eventBus = app.Services.GetRequiredService<IEventBus>();
+//var eventBus = app.Services.GetRequiredService<IEventBus>();
 
-eventBus.Subscribe<ProductPriceChangedIntegrationEvent, ProductPriceChangedIntegrationEventHandler>();
-eventBus.Subscribe<OrderStartedIntegrationEvent, OrderStartedIntegrationEventHandler>();
+//eventBus.Subscribe<ProductPriceChangedIntegrationEvent, ProductPriceChangedIntegrationEventHandler>();
+//eventBus.Subscribe<OrderStartedIntegrationEvent, OrderStartedIntegrationEventHandler>();
 
 await app.RunAsync();
