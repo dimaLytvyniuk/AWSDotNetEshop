@@ -459,8 +459,8 @@ Resources:
   ECSFargateTaskDefinitionWebAggregator:
     Type: AWS::ECS::TaskDefinition
     DependsOn:
-    - CatalogApiInternalALB
-    - BasketApiInternalALB
+      - CatalogApiInternalALB
+      - BasketApiInternalALB
     Properties:
       Family: ecs-fargate-task-web-aggregator
       NetworkMode: awsvpc
