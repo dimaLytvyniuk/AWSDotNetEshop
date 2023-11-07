@@ -21,8 +21,8 @@ public class DynamoHC : IHealthCheck
             ExclusiveStartTableName = null
         }).WaitAsync(TimeSpan.FromSeconds(5))
         .ContinueWith((task1)=> {
-            if (task1.IsFaulted) return HealthCheckResult.Unhealthy();
-            else return task1.Result.HttpStatusCode == HttpStatusCode.OK ? HealthCheckResult.Healthy("Ok") : HealthCheckResult.Unhealthy();
+            if (task1.IsFaulted) return HealthCheckResult.Unhealthy(task1.Exception.ToString());
+            else return task1.Result.HttpStatusCode == HttpStatusCode.OK ? HealthCheckResult.Healthy("Ok") : HealthCheckResult.Unhealthy(task1.Exception.ToString());
         });
     }
 }
