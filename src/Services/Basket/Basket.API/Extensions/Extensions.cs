@@ -44,7 +44,7 @@ public static class Extensions
                 return new AmazonDynamoDBClient(accessKey, awsSecret);
             }
 
-            return new AmazonDynamoDBClient(Amazon.RegionEndpoint.USEast1);
+            return new AmazonDynamoDBClient();
         });
     }
 
