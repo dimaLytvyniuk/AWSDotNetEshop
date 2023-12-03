@@ -1,4 +1,8 @@
-﻿var builder = WebApplication.CreateBuilder(args);
+﻿using Amazon.SimpleNotificationService;
+using Amazon.SQS;
+using EventBusSns;
+
+var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
@@ -40,6 +44,22 @@ services.AddTransient<IIntegrationEventHandler<OrderStockConfirmedIntegrationEve
 services.AddTransient<IIntegrationEventHandler<OrderStockRejectedIntegrationEvent>, OrderStockRejectedIntegrationEventHandler>();
 services.AddTransient<IIntegrationEventHandler<UserCheckoutAcceptedIntegrationEvent>, UserCheckoutAcceptedIntegrationEventHandler>();
 
+builder.Services
+    .AddSingleton(sp => new AmazonSQSClient())
+    .AddSingleton(sp => new AmazonSimpleNotificationServiceClient())
+    .AddSingleton<IAmazonQueueEventBus, AmazonQueueEventBus>()
+    .AddAmazonSqsQueue(
+        "https://sqs.us-east-1.amazonaws.com/705378975957/eshop_ordering",
+        opt =>
+        {
+            opt.AddEventHandler<UserCheckoutAcceptedIntegrationEvent, UserCheckoutAcceptedIntegrationEventHandler>();
+            opt.AddEventHandler<GracePeriodConfirmedIntegrationEvent, GracePeriodConfirmedIntegrationEventHandler>();
+            opt.AddEventHandler<OrderStockConfirmedIntegrationEvent, OrderStockConfirmedIntegrationEventHandler>();
+            opt.AddEventHandler<OrderStockRejectedIntegrationEvent, OrderStockRejectedIntegrationEventHandler>();
+            opt.AddEventHandler<OrderPaymentFailedIntegrationEvent, OrderPaymentFailedIntegrationEventHandler>();
+            opt.AddEventHandler<OrderPaymentSucceededIntegrationEvent, OrderPaymentSucceededIntegrationEventHandler>();
+        });
+
 var app = builder.Build();
 
 app.UseServiceDefaults();
@@ -47,26 +67,17 @@ app.UseServiceDefaults();
 app.MapGrpcService<OrderingService>();
 app.MapControllers();
 
-var eventBus = app.Services.GetRequiredService<IEventBus>();
+//using (var scope = app.Services.CreateScope())
+//{
+//    var context = scope.ServiceProvider.GetRequiredService<OrderingContext>();
+//    var env = app.Services.GetService<IWebHostEnvironment>();
+//    var settings = app.Services.GetService<IOptions<OrderingSettings>>();
+//    var logger = app.Services.GetService<ILogger<OrderingContextSeed>>();
+//    await context.Database.MigrateAsync();
 
-eventBus.Subscribe<UserCheckoutAcceptedIntegrationEvent, IIntegrationEventHandler<UserCheckoutAcceptedIntegrationEvent>>();
-eventBus.Subscribe<GracePeriodConfirmedIntegrationEvent, IIntegrationEventHandler<GracePeriodConfirmedIntegrationEvent>>();
-eventBus.Subscribe<OrderStockConfirmedIntegrationEvent, IIntegrationEventHandler<OrderStockConfirmedIntegrationEvent>>();
-eventBus.Subscribe<OrderStockRejectedIntegrationEvent, IIntegrationEventHandler<OrderStockRejectedIntegrationEvent>>();
-eventBus.Subscribe<OrderPaymentFailedIntegrationEvent, IIntegrationEventHandler<OrderPaymentFailedIntegrationEvent>>();
-eventBus.Subscribe<OrderPaymentSucceededIntegrationEvent, IIntegrationEventHandler<OrderPaymentSucceededIntegrationEvent>>();
-
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<OrderingContext>();
-    var env = app.Services.GetService<IWebHostEnvironment>();
-    var settings = app.Services.GetService<IOptions<OrderingSettings>>();
-    var logger = app.Services.GetService<ILogger<OrderingContextSeed>>();
-    await context.Database.MigrateAsync();
-
-    await new OrderingContextSeed().SeedAsync(context, env, settings, logger);
-    var integEventContext = scope.ServiceProvider.GetRequiredService<IntegrationEventLogContext>();
-    await integEventContext.Database.MigrateAsync();
-}
+//    await new OrderingContextSeed().SeedAsync(context, env, settings, logger);
+//    var integEventContext = scope.ServiceProvider.GetRequiredService<IntegrationEventLogContext>();
+//    await integEventContext.Database.MigrateAsync();
+//}
 
 await app.RunAsync();

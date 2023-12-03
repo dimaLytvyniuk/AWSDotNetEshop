@@ -66,6 +66,21 @@ public static class Extensions
             HealthStatus.Unhealthy,
             tags,
             TimeSpan.FromSeconds(5)));
+
+        healthCheck.AddEventBusHC();
     }
 
+    public static void AddEventBusHC(this IHealthChecksBuilder healthChecks)
+    {
+        healthChecks
+            .AddSnsTopicsAndSubscriptions(options =>
+                {
+                    options.AddTopicAndSubscriptions("DotnetEshop");
+                },
+                name: "eventbus")
+            .AddSqs(options =>
+                {
+                    options.AddQueue("eshop_basket");
+                });
+    }
 }

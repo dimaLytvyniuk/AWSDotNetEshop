@@ -1,4 +1,8 @@
-﻿var builder = WebApplication.CreateBuilder(args);
+﻿using Amazon.SimpleNotificationService;
+using Amazon.SQS;
+using EventBusSns;
+
+var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
@@ -15,16 +19,23 @@ builder.Services.AddTransient<OrderStartedIntegrationEventHandler>();
 builder.Services.AddTransient<IBasketRepository, DynamoBasketRepository>();
 builder.Services.AddTransient<IIdentityService, IdentityService>();
 
+builder.Services
+    .AddSingleton(sp => new AmazonSQSClient())
+    .AddSingleton(sp => new AmazonSimpleNotificationServiceClient())
+    .AddSingleton<IAmazonQueueEventBus, AmazonQueueEventBus>()
+    .AddAmazonSqsQueue(
+        "https://sqs.us-east-1.amazonaws.com/705378975957/eshop_basket",
+        opt =>
+        {
+            opt.AddEventHandler<ProductPriceChangedIntegrationEvent, ProductPriceChangedIntegrationEventHandler>();
+            opt.AddEventHandler<OrderStartedIntegrationEvent, OrderStartedIntegrationEventHandler>();
+        });
+
 var app = builder.Build();
 
 app.UseServiceDefaults();
 
 app.MapGrpcService<BasketService>();
 app.MapControllers();
-
-//var eventBus = app.Services.GetRequiredService<IEventBus>();
-
-//eventBus.Subscribe<ProductPriceChangedIntegrationEvent, ProductPriceChangedIntegrationEventHandler>();
-//eventBus.Subscribe<OrderStartedIntegrationEvent, OrderStartedIntegrationEventHandler>();
 
 await app.RunAsync();

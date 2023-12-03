@@ -1,4 +1,6 @@
-﻿namespace Microsoft.eShopOnContainers.Services.Basket.API.Controllers;
+﻿using EventBusSns;
+
+namespace Microsoft.eShopOnContainers.Services.Basket.API.Controllers;
 
 [Route("api/v1/[controller]")]
 [Authorize]
@@ -7,14 +9,14 @@ public class BasketController : ControllerBase
 {
     private readonly IBasketRepository _repository;
     private readonly IIdentityService _identityService;
-    private readonly IEventBus _eventBus;
+    private readonly IAmazonQueueEventBus _eventBus;
     private readonly ILogger<BasketController> _logger;
 
     public BasketController(
         ILogger<BasketController> logger,
         IBasketRepository repository,
         IIdentityService identityService,
-        IEventBus eventBus)
+        IAmazonQueueEventBus eventBus)
     {
         _logger = logger;
         _repository = repository;
@@ -67,7 +69,7 @@ public class BasketController : ControllerBase
         // order creation process
         try
         {
-            _eventBus.Publish(eventMessage);
+            await _eventBus.Publish(eventMessage, "eshop");
         }
         catch (Exception ex)
         {

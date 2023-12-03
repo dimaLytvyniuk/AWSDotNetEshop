@@ -3,7 +3,7 @@ using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
-using Microsoft.eShopOnContainers.BuildingBlocks.EventBus.Abstractions;
+using EventBusSns;
 using Microsoft.Extensions.Options;
 using Ordering.BackgroundTasks.Events;
 
@@ -13,9 +13,9 @@ namespace Ordering.BackgroundTasks.Services
     {
         private readonly ILogger<GracePeriodManagerService> _logger;
         private readonly BackgroundTaskSettings _settings;
-        private readonly IEventBus _eventBus;
+        private readonly IAmazonQueueEventBus _eventBus;
 
-        public GracePeriodManagerService(IOptions<BackgroundTaskSettings> settings, IEventBus eventBus, ILogger<GracePeriodManagerService> logger)
+        public GracePeriodManagerService(IOptions<BackgroundTaskSettings> settings, IAmazonQueueEventBus eventBus, ILogger<GracePeriodManagerService> logger)
         {
             _settings = settings?.Value ?? throw new ArgumentNullException(nameof(settings));
             _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
@@ -32,14 +32,14 @@ namespace Ordering.BackgroundTasks.Services
             {
                 _logger.LogDebug("GracePeriodManagerService background task is doing background work.");
 
-                CheckConfirmedGracePeriodOrders();
+                await CheckConfirmedGracePeriodOrders();
                 await Task.Delay(_settings.CheckUpdateTime, stoppingToken);
             }
 
             _logger.LogDebug("GracePeriodManagerService background task is stopping.");
         }
 
-        private void CheckConfirmedGracePeriodOrders()
+        private async Task CheckConfirmedGracePeriodOrders()
         {
             _logger.LogDebug("Checking confirmed grace period orders");
 
@@ -51,7 +51,7 @@ namespace Ordering.BackgroundTasks.Services
 
                 _logger.LogInformation("Publishing integration event: {IntegrationEventId} - ({@IntegrationEvent})", confirmGracePeriodEvent.Id, confirmGracePeriodEvent);
 
-                _eventBus.Publish(confirmGracePeriodEvent);
+                await _eventBus.Publish(confirmGracePeriodEvent, "eshop");
             }
         }
 

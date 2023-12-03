@@ -1,14 +1,16 @@
-﻿namespace Microsoft.eShopOnContainers.Services.Ordering.API.Application.IntegrationEvents;
+﻿using EventBusSns;
+
+namespace Microsoft.eShopOnContainers.Services.Ordering.API.Application.IntegrationEvents;
 
 public class OrderingIntegrationEventService : IOrderingIntegrationEventService
 {
     private readonly Func<DbConnection, IIntegrationEventLogService> _integrationEventLogServiceFactory;
-    private readonly IEventBus _eventBus;
+    private readonly IAmazonQueueEventBus _eventBus;
     private readonly OrderingContext _orderingContext;
     private readonly IIntegrationEventLogService _eventLogService;
     private readonly ILogger<OrderingIntegrationEventService> _logger;
 
-    public OrderingIntegrationEventService(IEventBus eventBus,
+    public OrderingIntegrationEventService(IAmazonQueueEventBus eventBus,
         OrderingContext orderingContext,
         IntegrationEventLogContext eventLogContext,
         Func<DbConnection, IIntegrationEventLogService> integrationEventLogServiceFactory,
@@ -32,7 +34,7 @@ public class OrderingIntegrationEventService : IOrderingIntegrationEventService
             try
             {
                 await _eventLogService.MarkEventAsInProgressAsync(logEvt.EventId);
-                _eventBus.Publish(logEvt.IntegrationEvent);
+                await _eventBus.Publish(logEvt.IntegrationEvent, "eshop");
                 await _eventLogService.MarkEventAsPublishedAsync(logEvt.EventId);
             }
             catch (Exception ex)

@@ -1,9 +1,11 @@
-﻿namespace Microsoft.eShopOnContainers.Services.Catalog.API.IntegrationEvents;
+﻿using EventBusSns;
+
+namespace Microsoft.eShopOnContainers.Services.Catalog.API.IntegrationEvents;
 
 public class CatalogIntegrationEventService : ICatalogIntegrationEventService, IDisposable
 {
     private readonly Func<DbConnection, IIntegrationEventLogService> _integrationEventLogServiceFactory;
-    private readonly IEventBus _eventBus;
+    private readonly IAmazonQueueEventBus _eventBus;
     private readonly CatalogContext _catalogContext;
     private readonly IIntegrationEventLogService _eventLogService;
     private readonly ILogger<CatalogIntegrationEventService> _logger;
@@ -11,7 +13,7 @@ public class CatalogIntegrationEventService : ICatalogIntegrationEventService, I
 
     public CatalogIntegrationEventService(
         ILogger<CatalogIntegrationEventService> logger,
-        IEventBus eventBus,
+        IAmazonQueueEventBus eventBus,
         CatalogContext catalogContext,
         Func<DbConnection, IIntegrationEventLogService> integrationEventLogServiceFactory)
     {
@@ -29,7 +31,7 @@ public class CatalogIntegrationEventService : ICatalogIntegrationEventService, I
             _logger.LogInformation("Publishing integration event: {IntegrationEventId_published} - ({@IntegrationEvent})", evt.Id, evt);
 
             await _eventLogService.MarkEventAsInProgressAsync(evt.Id);
-            _eventBus.Publish(evt);
+            await _eventBus.Publish(evt, "eshop");
             await _eventLogService.MarkEventAsPublishedAsync(evt.Id);
         }
         catch (Exception ex)

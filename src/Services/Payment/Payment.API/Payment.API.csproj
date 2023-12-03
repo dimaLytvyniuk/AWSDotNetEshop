@@ -6,7 +6,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\EventBus\EventBusSns\EventBusSns.csproj" />
     <ProjectReference Include="..\..\Services.Common\Services.Common.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="AspNetCore.HealthChecks.Aws.Sns" />
+    <PackageReference Include="AspNetCore.HealthChecks.Aws.Sqs" />
+  </ItemGroup>
 </Project>

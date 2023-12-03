@@ -24,6 +24,17 @@ public static class Extensions
                     tags: new string[] { "ready" });
         }
 
+        hcBuilder
+            .AddSnsTopicsAndSubscriptions(options =>
+            {
+                options.AddTopicAndSubscriptions("DotnetEshop");
+            })
+            .AddSqs(options =>
+            {
+                options.AddQueue("eshop_catalog");
+            },
+                name: "eventbus");
+
         return services;
     }
 

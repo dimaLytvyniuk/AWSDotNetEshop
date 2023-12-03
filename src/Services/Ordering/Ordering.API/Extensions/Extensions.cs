@@ -13,6 +13,17 @@ internal static class Extensions
                 name: "OrderingDB-check",
                 tags: new string[] { "ready" });
 
+        hcBuilder
+            .AddSnsTopicsAndSubscriptions(options =>
+                {
+                    options.AddTopicAndSubscriptions("DotnetEshop");
+                })
+            .AddSqs(options =>
+                {
+                    options.AddQueue("eshop_ordering");
+                },
+                name: "eventbus");
+
         return services;
     }
 

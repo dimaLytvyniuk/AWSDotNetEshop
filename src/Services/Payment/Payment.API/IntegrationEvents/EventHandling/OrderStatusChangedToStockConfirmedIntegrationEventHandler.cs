@@ -1,16 +1,17 @@
 ﻿using System.Collections.Generic;
+using EventBusSns;
 
 namespace Microsoft.eShopOnContainers.Payment.API.IntegrationEvents.EventHandling;
 
 public class OrderStatusChangedToStockConfirmedIntegrationEventHandler :
     IIntegrationEventHandler<OrderStatusChangedToStockConfirmedIntegrationEvent>
 {
-    private readonly IEventBus _eventBus;
+    private readonly IAmazonQueueEventBus _eventBus;
     private readonly PaymentSettings _settings;
     private readonly ILogger<OrderStatusChangedToStockConfirmedIntegrationEventHandler> _logger;
 
     public OrderStatusChangedToStockConfirmedIntegrationEventHandler(
-        IEventBus eventBus,
+        IAmazonQueueEventBus eventBus,
         IOptionsSnapshot<PaymentSettings> settings,
         ILogger<OrderStatusChangedToStockConfirmedIntegrationEventHandler> logger)
     {
@@ -46,9 +47,7 @@ public class OrderStatusChangedToStockConfirmedIntegrationEventHandler :
 
             _logger.LogInformation("Publishing integration event: {IntegrationEventId} - ({@IntegrationEvent})", orderPaymentIntegrationEvent.Id, orderPaymentIntegrationEvent);
 
-            _eventBus.Publish(orderPaymentIntegrationEvent);
-
-            await Task.CompletedTask;
+            await _eventBus.Publish(orderPaymentIntegrationEvent, "eshop");
         }
     }
 }
