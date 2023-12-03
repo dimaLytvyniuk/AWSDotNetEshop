@@ -33,7 +33,7 @@ public static class Extensions
             {
                 options.AddQueue("eshop_catalog");
             },
-                name: "eventbus");
+                name: "awsqueue");
 
         return services;
     }

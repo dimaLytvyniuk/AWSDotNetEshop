@@ -77,7 +77,7 @@ public static class Extensions
                 {
                     options.AddTopicAndSubscriptions("DotnetEshop");
                 },
-                name: "eventbus")
+                name: "awsqueue")
             .AddSqs(options =>
                 {
                     options.AddQueue("eshop_basket");

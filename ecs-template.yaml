@@ -446,6 +446,7 @@ Resources:
       Cpu: '256'
       Memory: '512'
       ExecutionRoleArn: !Ref ECSServiceRole
+      TaskRoleArn: "arn:aws:iam::705378975957:role/ecs-task-with-sqs-sns"
       ContainerDefinitions:
         - Name: ecs-fargate-container-catalog-api
           Image: !Join ["", [!Ref "AWS::AccountId", ".dkr.ecr.", !Ref "AWS::Region", ".amazonaws.com/", "catalog-api:latest"]]
@@ -470,6 +471,7 @@ Resources:
       Cpu: '256'
       Memory: '512'
       ExecutionRoleArn: !Ref ECSServiceRole
+      TaskRoleArn: "arn:aws:iam::705378975957:role/ecs-task-with-sqs-sns"
       ContainerDefinitions:
         - Name: ecs-fargate-container-basket-api
           Image: !Join ["", [!Ref "AWS::AccountId", ".dkr.ecr.", !Ref "AWS::Region", ".amazonaws.com/", "basket-api:latest"]]
@@ -494,6 +496,7 @@ Resources:
       Cpu: '256'
       Memory: '512'
       ExecutionRoleArn: !Ref ECSServiceRole
+      TaskRoleArn: "arn:aws:iam::705378975957:role/ecs-task-with-sqs-sns"
       ContainerDefinitions:
         - Name: ecs-fargate-container-ordering-api
           Image: !Join ["", [!Ref "AWS::AccountId", ".dkr.ecr.", !Ref "AWS::Region", ".amazonaws.com/", "ordering-api:latest"]]
@@ -518,6 +521,7 @@ Resources:
       Cpu: '256'
       Memory: '512'
       ExecutionRoleArn: !Ref ECSServiceRole
+      TaskRoleArn: "arn:aws:iam::705378975957:role/ecs-task-with-sqs-sns"
       ContainerDefinitions:
         - Name: ecs-fargate-container-payment-api
           Image: !Join ["", [!Ref "AWS::AccountId", ".dkr.ecr.", !Ref "AWS::Region", ".amazonaws.com/", "payment-api:latest"]]

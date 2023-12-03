@@ -30,7 +30,7 @@ builder.Services.AddHealthChecks()
         {
             options.AddQueue("eshop_payment");
         },
-        name: "eventbus");
+        name: "awsqueue");
 
 var app = builder.Build();
 

@@ -22,7 +22,7 @@ internal static class Extensions
                 {
                     options.AddQueue("eshop_ordering");
                 },
-                name: "eventbus");
+                name: "awsqueue");
 
         return services;
     }
