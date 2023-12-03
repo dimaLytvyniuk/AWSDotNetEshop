@@ -73,3 +73,51 @@ Resources:
             ]
           }
         RegistryId: !Ref "AWS::AccountId"
+
+  ECROrderingApiRepository:
+    Type: 'AWS::ECR::Repository'
+    Properties:
+      RepositoryName: ordering-api
+      LifecyclePolicy:
+        LifecyclePolicyText: !Sub |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep only the last 5 images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 5
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+        RegistryId: !Ref "AWS::AccountId"
+
+  ECRPaymentApiRepository:
+    Type: 'AWS::ECR::Repository'
+    Properties:
+      RepositoryName: payment-api
+      LifecyclePolicy:
+        LifecyclePolicyText: !Sub |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep only the last 5 images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 5
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+        RegistryId: !Ref "AWS::AccountId"

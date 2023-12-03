@@ -200,6 +200,18 @@ Resources:
       LogGroupName: /aws/ecs/BasketApi
       RetentionInDays: 7
 
+ OrderingApiLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/ecs/OrderingApi
+      RetentionInDays: 7
+
+ PaymentApiLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/ecs/PaymentApi
+      RetentionInDays: 7
+
   RabbitMQLogsGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -316,6 +328,30 @@ Resources:
       Scheme: internal
       Type: application
 
+  OrderingApiInternalALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: ordering-api-lb
+      Subnets:
+        - !Ref ECSPrivateSubnet
+        - !Ref ECSPrivateSubnet2
+      SecurityGroups:
+        - !Ref InternalALBSecurityGroup
+      Scheme: internal
+      Type: application
+
+  PaymentApiInternalALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: payment-api-lb
+      Subnets:
+        - !Ref ECSPrivateSubnet
+        - !Ref ECSPrivateSubnet2
+      SecurityGroups:
+        - !Ref InternalALBSecurityGroup
+      Scheme: internal
+      Type: application
+
   CatalogApiTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     DependsOn: CatalogApiInternalALB
@@ -332,6 +368,28 @@ Resources:
     DependsOn: BasketApiInternalALB
     Properties:
       Name: basket-api-targetgroup
+      Port: 80
+      HealthCheckPath: /api/ping
+      Protocol: HTTP
+      TargetType: ip
+      VpcId: !Ref VPC
+
+  OrderingApiTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    DependsOn: OrderingApiInternalALB
+    Properties:
+      Name: ordering-api-targetgroup
+      Port: 80
+      HealthCheckPath: /api/ping
+      Protocol: HTTP
+      TargetType: ip
+      VpcId: !Ref VPC
+
+  PaymentApiTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    DependsOn: PaymentApiInternalALB
+    Properties:
+      Name: payment-api-targetgroup
       Port: 80
       HealthCheckPath: /api/ping
       Protocol: HTTP
@@ -357,6 +415,26 @@ Resources:
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref BasketApiTargetGroup
+
+  OrderingApiInternalALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref OrderingApiInternalALB
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref OrderingApiTargetGroup
+
+  PaymentApiInternalALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref PaymentApiInternalALB
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref PaymentApiTargetGroup
 
   ECSFargateTaskDefinitionCatalogApi:
     Type: AWS::ECS::TaskDefinition
@@ -405,6 +483,54 @@ Resources:
               awslogs-group: !Ref BasketApiLogsGroup
               awslogs-region: !Ref "AWS::Region"
               awslogs-stream-prefix: BasketApi
+
+  ECSFargateTaskDefinitionOrderingApi:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: ecs-fargate-task-ordering-api
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: '256'
+      Memory: '512'
+      ExecutionRoleArn: !Ref ECSServiceRole
+      ContainerDefinitions:
+        - Name: ecs-fargate-container-ordering-api
+          Image: !Join ["", [!Ref "AWS::AccountId", ".dkr.ecr.", !Ref "AWS::Region", ".amazonaws.com/", "ordering-api:latest"]]
+          Essential: true
+          Memory: 128
+          PortMappings:
+            - ContainerPort: 80
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref OrderingApiLogsGroup
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: OrderingApi
+
+  ECSFargateTaskDefinitionPaymentApi:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: ecs-fargate-task-payment-api
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: '256'
+      Memory: '512'
+      ExecutionRoleArn: !Ref ECSServiceRole
+      ContainerDefinitions:
+        - Name: ecs-fargate-container-payment-api
+          Image: !Join ["", [!Ref "AWS::AccountId", ".dkr.ecr.", !Ref "AWS::Region", ".amazonaws.com/", "payment-api:latest"]]
+          Essential: true
+          Memory: 128
+          PortMappings:
+            - ContainerPort: 80
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref PaymentApiLogsGroup
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: PaymentApi
 
   ECSFargateServiceCatalogApi:
       Type: AWS::ECS::Service
@@ -456,11 +582,63 @@ Resources:
           - !Ref ECSPrivateSubnet
           - !Ref ECSPrivateSubnet2
 
+  ECSFargateServiceOrderingApi:
+    Type: AWS::ECS::Service
+    DependsOn: OrderingApiInternalALBListener
+    Properties:
+      ServiceName: ecs-fargate-ordering-api-service
+      Cluster: !Ref ECSEshopCluster
+      TaskDefinition: !Ref ECSFargateTaskDefinitionOrderingApi
+      LoadBalancers:
+      - TargetGroupArn: !Ref OrderingApiTargetGroup
+        ContainerName: ecs-fargate-container-ordering-api
+        ContainerPort: 80
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 0
+        MaximumPercent: 100
+      DesiredCount: 2
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+          - !Ref ECSEshopSecurityGroup
+          Subnets:
+          - !Ref ECSPrivateSubnet
+          - !Ref ECSPrivateSubnet2
+
+  ECSFargateServicePaymentApi:
+    Type: AWS::ECS::Service
+    DependsOn: PaymentApiInternalALBListener
+    Properties:
+      ServiceName: ecs-fargate-payment-api-service
+      Cluster: !Ref ECSEshopCluster
+      TaskDefinition: !Ref ECSFargateTaskDefinitionPaymentApi
+      LoadBalancers:
+      - TargetGroupArn: !Ref PaymentApiTargetGroup
+        ContainerName: ecs-fargate-container-payment-api
+        ContainerPort: 80
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 0
+        MaximumPercent: 100
+      DesiredCount: 2
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+          - !Ref ECSEshopSecurityGroup
+          Subnets:
+          - !Ref ECSPrivateSubnet
+          - !Ref ECSPrivateSubnet2
+
   ECSFargateTaskDefinitionWebAggregator:
     Type: AWS::ECS::TaskDefinition
     DependsOn:
       - CatalogApiInternalALB
       - BasketApiInternalALB
+      - OrderingApiInternalALB
+      - PaymentApiInternalALB
     Properties:
       Family: ecs-fargate-task-web-aggregator
       NetworkMode: awsvpc
@@ -487,14 +665,26 @@ Resources:
             Value: !Join ['', ['http://', !GetAtt  CatalogApiInternalALB.DNSName]]
           - Name: ReverseProxy__Clusters__basket__Destinations__destination0__Address
             Value: !Join ['', ['http://', !GetAtt  BasketApiInternalALB.DNSName]]
+          - Name: ReverseProxy__Clusters__orders__Destinations__destination0__Address
+            Value: !Join ['', ['http://', !GetAtt  OrderingApiInternalALB.DNSName]]
+          - Name: ReverseProxy__Clusters__payment__Destinations__destination0__Address
+            Value: !Join ['', ['http://', !GetAtt  PaymentApiInternalALB.DNSName]]
           - Name: urls__catalog
             Value: !Join ['', ['http://', !GetAtt  CatalogApiInternalALB.DNSName]]
           - Name: urls__basket
             Value: !Join ['', ['http://', !GetAtt  BasketApiInternalALB.DNSName]]
+          - Name: urls__ordering
+            Value: !Join ['', ['http://', !GetAtt  OrderingApiInternalALB.DNSName]]
+          - Name: urls__payment
+            Value: !Join ['', ['http://', !GetAtt  PaymentApiInternalALB.DNSName]]
           - Name: CatalogUrlHC
             Value: !Join ['', ['http://', !GetAtt  CatalogApiInternalALB.DNSName, '/hc']]
           - Name: BasketUrlHC
             Value: !Join ['', ['http://', !GetAtt  BasketApiInternalALB.DNSName, '/hc']]
+          - Name: OrderingUrlHC
+            Value: !Join ['', ['http://', !GetAtt  OrderingApiInternalALB.DNSName, '/hc']]
+          - Name: PaymentUrlHC
+            Value: !Join ['', ['http://', !GetAtt  PaymentApiInternalALB.DNSName, '/hc']]
 
   WebAggregatorALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
