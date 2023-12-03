@@ -200,13 +200,13 @@ Resources:
       LogGroupName: /aws/ecs/BasketApi
       RetentionInDays: 7
 
- OrderingApiLogsGroup:
+  OrderingApiLogsGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: /aws/ecs/OrderingApi
       RetentionInDays: 7
 
- PaymentApiLogsGroup:
+  PaymentApiLogsGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: /aws/ecs/PaymentApi
